@@ -1,5 +1,6 @@
+---
 repo:
-  scanPath: /var/www/git
+  scanPath: /Users/prologic/Projects
   readme:
     - readme
     - README
@@ -20,6 +21,6 @@ meta:
   title: git good
   description: i think it's a skill issue
 server:
-  name: git.icyphox.sh
+  name: localhost
   host: 127.0.0.1
   port: 5555
