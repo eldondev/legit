@@ -1,29 +1,23 @@
 {{ define "repo" }}
 <html>
-  <title>{{ .name }}
-    {{ if .parent }}
-    &mdash; {{ .parent }}
-    {{ end }}
-  </title>
+<title>{{ .name }}
+  {{ if .parent }}
+  &mdash; {{ .parent }}
+  {{ end }}
+</title>
 {{ template "head" . }}
 
 {{ template "repoheader" . }}
 
-  <body>
-    {{ template "nav" . }}
-    <main>
-      {{ $repo := .name }}
-      <div class="log">
-        {{ range .commits }}
-        <div>
-          <div><a href="/{{ $repo }}/commit/{{ .Hash.String }}">{{ slice .Hash.String 0 8 }}</a></div>
-          <pre>{{ .Message }}</pre>
-        </div>
-        <div class="commit-info">
-          {{ .Author.Name }} <span class="commit-email">{{ .Author.Email }}</span>
-          <div>{{ .Author.When.Format "Mon, 02 Jan 2006 15:04:05 -0700" }}</div>
-        </div>
-        {{ end }}
+<body>
+  {{ template "nav" . }}
+  <main>
+    {{ $repo := .name }}
+    <div class="log">
+      {{ range .commits }}
+      <div>
+        <div><a href="/{{ $repo }}/commit/{{ .Hash.String }}">{{ slice .Hash.String 0 8 }}</a></div>
+        <pre>{{ .Message }}</pre>
       </div>
 {{- if .license }}
       <details class="license">
@@ -35,18 +29,17 @@
 {{- end -}}
 {{- if .readme }}
       <article class="readme">
-        <pre>
-          {{- .readme -}}
-        </pre>
+        {{- .readme -}}
       </article>
 {{- end -}}
       <div class="clone-url">
       <strong>clone</strong>
-        <pre>
+      <pre>
 git clone https://{{ .servername }}/{{ .name }}
         </pre>
-      </div>
-    </main>
-  </body>
+    </div>
+  </main>
+</body>
+
 </html>
 {{ end }}
