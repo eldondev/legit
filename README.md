@@ -27,7 +27,7 @@ directory by default; pass the '--config' flag to point it elsewhere.
 
 Example config.yaml:
 
-```#!yaml
+```yaml
 ---
 repo:
   scanPath: /var/www/git
