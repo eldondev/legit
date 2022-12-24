@@ -201,8 +201,6 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
-	return
 }
 
 func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
@@ -236,7 +234,6 @@ func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
 	data["desc"] = getDescription(path)
 
 	d.listFiles(files, data, w)
-	return
 }
 
 func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +253,7 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contents, err := gr.FileContent(treePath)
+	contents, _ := gr.FileContent(treePath)
 	data := make(map[string]any)
 	data["name"] = name
 	data["ref"] = ref
@@ -264,7 +261,6 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 	data["path"] = treePath
 
 	d.showFile(contents, data, w)
-	return
 }
 
 func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
