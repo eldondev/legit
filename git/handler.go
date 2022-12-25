@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -25,18 +26,20 @@ func (h *gitHTTPHandler) setupRoutes() {
 		h.Router = router.New()
 		h.GET("/:repo/info/refs", h.infoRefsHandler)
 		h.POST("/:repo/git-upload-pack", h.uploadPackHandler)
+		h.POST("/:repo/git-receive-pack", h.receivePackHandler)
 	}
 }
 
 func (h *gitHTTPHandler) infoRefsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	repo := p.ByName("repo")
 
-	if r.URL.Query().Get("service") != "git-upload-pack" {
+	service := r.URL.Query().Get("service")
+	if service != "git-upload-pack" && service != "git-receive-pack" {
 		http.Error(rw, "only smart git", http.StatusForbidden)
 		return
 	}
 
-	rw.Header().Set("content-type", "application/x-git-upload-pack-advertisement")
+	rw.Header().Set("content-type", fmt.Sprintf("application/x-%s-advertisement", service))
 
 	ep, err := transport.NewEndpoint("/")
 	if err != nil {
@@ -55,11 +58,23 @@ func (h *gitHTTPHandler) infoRefsHandler(rw http.ResponseWriter, r *http.Request
 	bfs := osfs.New(dir)
 	ld := server.NewFilesystemLoader(bfs)
 	svr := server.NewServer(ld)
-	sess, err := svr.NewUploadPackSession(ep, nil)
-	if err != nil {
-		http.Error(rw, err.Error(), 500)
-		log.Println(err)
-		return
+
+	var sess transport.Session
+
+	if service == "git-upload-pack" {
+		sess, err = svr.NewUploadPackSession(ep, nil)
+		if err != nil {
+			http.Error(rw, err.Error(), 500)
+			log.Println(err)
+			return
+		}
+	} else {
+		sess, err = svr.NewReceivePackSession(ep, nil)
+		if err != nil {
+			http.Error(rw, err.Error(), 500)
+			log.Println(err)
+			return
+		}
 	}
 
 	ar, err := sess.AdvertisedReferencesContext(r.Context())
@@ -69,10 +84,62 @@ func (h *gitHTTPHandler) infoRefsHandler(rw http.ResponseWriter, r *http.Request
 		return
 	}
 	ar.Prefix = [][]byte{
-		[]byte("# service=git-upload-pack"),
+		[]byte(fmt.Sprintf("# service=%s", service)),
 		pktline.Flush,
 	}
 	err = ar.Encode(rw)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+}
+
+func (h *gitHTTPHandler) receivePackHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	repo := p.ByName("repo")
+
+	rw.Header().Set("content-type", "application/x-git-receive-pack-result")
+
+	upr := packp.NewReferenceUpdateRequest()
+	err := upr.Decode(r.Body)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+
+	ep, err := transport.NewEndpoint("/")
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+	dir, err := securejoin.SecureJoin(h.root, repo)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+	dir = filepath.Join(dir, ".git")
+	log.Printf("dir: %s", dir)
+	bfs := osfs.New(dir)
+	ld := server.NewFilesystemLoader(bfs)
+	svr := server.NewServer(ld)
+	sess, err := svr.NewReceivePackSession(ep, nil)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+	defer sess.Close()
+	res, err := sess.ReceivePack(r.Context(), upr)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+
+	err = res.Encode(rw)
 	if err != nil {
 		http.Error(rw, err.Error(), 500)
 		log.Println(err)

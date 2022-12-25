@@ -24,9 +24,10 @@ type Config struct {
 		Description string `yaml:"description"`
 	} `yaml:"meta"`
 	Server struct {
-		Name string `yaml:"name,omitempty"`
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
+		Name     string `yaml:"name,omitempty"`
+		Host     string `yaml:"host"`
+		HTTPPort int    `yaml:"httpPort"`
+		SSHPort  int    `yaml:"sshPort"`
 	} `yaml:"server"`
 }
 

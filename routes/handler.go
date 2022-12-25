@@ -18,15 +18,11 @@ type depsWrapper struct {
 func (dw *depsWrapper) Multiplex(w http.ResponseWriter, r *http.Request) {
 	path := flow.Param(r.Context(), "...")
 
-	if r.URL.RawQuery == "service=git-receive-pack" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("no pushing allowed!"))
-		return
-	}
-
-	if path == "info/refs" && r.URL.RawQuery == "service=git-upload-pack" && r.Method == "GET" {
+	if path == "info/refs" && (r.URL.RawQuery == "service=git-upload-pack" || r.URL.RawQuery == "service=git-receive-pack") && r.Method == "GET" {
 		dw.gitsvc.ServeHTTP(w, r)
 	} else if path == "git-upload-pack" && r.Method == "POST" {
+		dw.gitsvc.ServeHTTP(w, r)
+	} else if path == "git-receieve-pack" && r.Method == "POST" {
 		dw.gitsvc.ServeHTTP(w, r)
 	} else if r.Method == "GET" {
 		dw.actualDeps.RepoIndex(w, r)

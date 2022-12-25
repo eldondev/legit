@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/alexedwards/flow v0.0.0-20220806114457-cf11be9e0e03
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/bluekeyes/go-gitdiff v0.7.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/dustin/go-humanize v1.0.0
@@ -13,6 +14,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/russross/blackfriday/v2 v2.1.0
 	go.mills.io/router v0.0.0-20221224023737-f2daa073d632
+	golang.org/x/crypto v0.4.0
 	gopkg.in/yaml.v3 v3.0.0
 )
 
@@ -32,7 +34,6 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect

@@ -23,4 +23,5 @@ meta:
 server:
   name: localhost
   host: 127.0.0.1
-  port: 5555
+  httpPort: 5555
+  sshPort: 2222
