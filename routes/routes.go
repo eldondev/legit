@@ -13,8 +13,9 @@ import (
 
 	"git.icyphox.sh/legit/config"
 	"git.icyphox.sh/legit/git"
-	"github.com/alexedwards/flow"
+	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/dustin/go-humanize"
+	"github.com/kataras/muxie"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 )
@@ -84,7 +85,7 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
@@ -204,13 +205,13 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
 	}
-	treePath := flow.Param(r.Context(), "...")
-	ref := flow.Param(r.Context(), "ref")
+	treePath := muxie.GetParam(w, "path")
+	ref := muxie.GetParam(w, "ref")
 
 	name = filepath.Clean(name)
 	path := filepath.Join(d.c.Repo.ScanPath, name)
@@ -237,13 +238,13 @@ func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
 	}
-	treePath := flow.Param(r.Context(), "...")
-	ref := flow.Param(r.Context(), "ref")
+	treePath := muxie.GetParam(w, "path")
+	ref := muxie.GetParam(w, "ref")
 
 	name = filepath.Clean(name)
 	path := filepath.Join(d.c.Repo.ScanPath, name)
@@ -264,12 +265,12 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
 	}
-	ref := flow.Param(r.Context(), "ref")
+	ref := muxie.GetParam(w, "ref")
 
 	path := filepath.Join(d.c.Repo.ScanPath, name)
 	gr, err := git.Open(path, ref)
@@ -302,12 +303,12 @@ func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
 	}
-	ref := flow.Param(r.Context(), "ref")
+	ref := muxie.GetParam(w, "ref")
 
 	path := filepath.Join(d.c.Repo.ScanPath, name)
 	gr, err := git.Open(path, ref)
@@ -343,7 +344,7 @@ func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
-	name := flow.Param(r.Context(), "name")
+	name := muxie.GetParam(w, "name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
@@ -387,8 +388,13 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) ServeStatic(w http.ResponseWriter, r *http.Request) {
-	f := flow.Param(r.Context(), "file")
-	f = filepath.Clean(filepath.Join(d.c.Dirs.Static, f))
+	p := muxie.GetParam(w, "path")
+	fn, err := securejoin.SecureJoin(d.c.Dirs.Static, p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
 
-	http.ServeFile(w, r, f)
+	http.ServeFile(w, r, fn)
 }

@@ -5,51 +5,27 @@ import (
 
 	"git.icyphox.sh/legit/config"
 	"git.icyphox.sh/legit/git"
-	"github.com/alexedwards/flow"
+	"github.com/kataras/muxie"
 )
 
-type depsWrapper struct {
-	actualDeps deps
-	gitsvc     http.Handler
-}
-
-// Checks for gitprotocol-http(5) specific smells; if found, passes
-// the request on to the git http service, else render the web frontend.
-func (dw *depsWrapper) Multiplex(w http.ResponseWriter, r *http.Request) {
-	path := flow.Param(r.Context(), "...")
-
-	if path == "info/refs" && (r.URL.RawQuery == "service=git-upload-pack" || r.URL.RawQuery == "service=git-receive-pack") && r.Method == "GET" {
-		dw.gitsvc.ServeHTTP(w, r)
-	} else if path == "git-upload-pack" && r.Method == "POST" {
-		dw.gitsvc.ServeHTTP(w, r)
-	} else if path == "git-receieve-pack" && r.Method == "POST" {
-		dw.gitsvc.ServeHTTP(w, r)
-	} else if r.Method == "GET" {
-		dw.actualDeps.RepoIndex(w, r)
-	}
-}
-
-func Handlers(c *config.Config) *flow.Mux {
-	mux := flow.New()
+func Handlers(c *config.Config) http.Handler {
 	d := deps{c}
 
-	gitsvc := git.Handler(c.Repo.ScanPath)
+	mux := muxie.NewMux()
+	mux.PathCorrection = true
 
-	dw := depsWrapper{actualDeps: d, gitsvc: gitsvc}
+	mux.HandleFunc("/", d.Index)
+	mux.HandleFunc("/:name", d.RepoIndex)
+	mux.HandleFunc("/static/*path", d.ServeStatic)
+	mux.HandleFunc("/:name/tree/:ref/*path", d.RepoTree)
+	mux.HandleFunc("/:name/blob/:ref/*path", d.FileContent)
+	mux.HandleFunc("/:name/log/:ref", d.Log)
+	mux.HandleFunc("/:name/commit/:ref", d.Diff)
+	mux.HandleFunc("/:name/refs", d.Refs)
 
-	mux.NotFound = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		d.Write404(w)
-	})
-
-	mux.HandleFunc("/", d.Index, "GET")
-	mux.HandleFunc("/static/:file", d.ServeStatic, "GET")
-	mux.HandleFunc("/:name", dw.Multiplex, "GET", "POST")
-	mux.HandleFunc("/:name/tree/:ref/...", d.RepoTree, "GET")
-	mux.HandleFunc("/:name/blob/:ref/...", d.FileContent, "GET")
-	mux.HandleFunc("/:name/log/:ref", d.Log, "GET")
-	mux.HandleFunc("/:name/commit/:ref", d.Diff, "GET")
-	mux.HandleFunc("/:name/refs", d.Refs, "GET")
-	mux.HandleFunc("/:name/...", dw.Multiplex, "GET", "POST")
+	mux.HandleFunc("/:name/info/refs", git.InfoRefsHandler(c.Repo.ScanPath))
+	mux.HandleFunc("/:name/git-upload-pack", git.UploadPackHandler(c.Repo.ScanPath))
+	mux.HandleFunc("/:name/git-receive-pack", git.ReceivePackHandler(c.Repo.ScanPath))
 
 	return mux
 }

@@ -27,8 +27,8 @@ func main() {
 		log.Fatal(git.ListenAndServe(c.Repo.ScanPath, addr))
 	}()
 
-	mux := routes.Handlers(c)
+	handler := routes.Handlers(c)
 	addr := fmt.Sprintf("%s:%d", c.Server.Host, c.Server.HTTPPort)
 	log.Println("starting HTTP server on", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(http.ListenAndServe(addr, handler))
 }

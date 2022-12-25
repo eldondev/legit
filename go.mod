@@ -10,10 +10,9 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.5.1
-	github.com/julienschmidt/httprouter v1.3.0
+	github.com/kataras/muxie v1.1.2
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/russross/blackfriday/v2 v2.1.0
-	go.mills.io/router v0.0.0-20221224023737-f2daa073d632
 	golang.org/x/crypto v0.4.0
 	gopkg.in/yaml.v3 v3.0.0
 )
