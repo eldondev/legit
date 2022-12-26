@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/alexedwards/flow v0.0.0-20220806114457-cf11be9e0e03
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/bluekeyes/go-gitdiff v0.7.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-git/go-billy/v5 v5.3.1
