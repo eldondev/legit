@@ -3,7 +3,6 @@ module git.icyphox.sh/legit
 go 1.19
 
 require (
-	github.com/alexedwards/flow v0.0.0-20220806114457-cf11be9e0e03
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/bluekeyes/go-gitdiff v0.7.0
 	github.com/cyphar/filepath-securejoin v0.2.3
