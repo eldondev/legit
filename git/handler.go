@@ -73,6 +73,11 @@ func InfoRefsHandler(root string) http.HandlerFunc {
 			[]byte(fmt.Sprintf("# service=%s", service)),
 			pktline.Flush,
 		}
+		if err := ar.Capabilities.Add("no-thin"); err != nil {
+			http.Error(rw, err.Error(), 500)
+			log.Println(err)
+			return
+		}
 		err = ar.Encode(rw)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)

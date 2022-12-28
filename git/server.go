@@ -218,6 +218,9 @@ func handleUploadPack(dir string, ch ssh.Channel) error {
 	if err != nil {
 		return fmt.Errorf("get advertised references: %w", err)
 	}
+	if err := ar.Capabilities.Add("no-thin"); err != nil {
+		return fmt.Errorf("set advertised capabilities: %w", err)
+	}
 	err = ar.Encode(ch)
 	if err != nil {
 		return fmt.Errorf("encode advertised references: %w", err)
