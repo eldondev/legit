@@ -1,7 +1,6 @@
 package git
 
 import (
-	"reflect"
 	"bytes"
 	"fmt"
 	"log"
@@ -145,7 +144,7 @@ func ReceivePackHandler(root string) http.HandlerFunc {
 		}
 		var g bytes.Buffer
 		res.Encode(&g)
-		nm.WriteChannel(sideband.PackData, g.Bytes())
+		nm.Write(g.Bytes())
 		rw.Write(pktline.FlushPkt)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)
