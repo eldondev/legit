@@ -1,15 +1,19 @@
 package git
 
 import (
+	"reflect"
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"path/filepath"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/sideband"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/server"
 	"github.com/kataras/muxie"
@@ -94,6 +98,7 @@ func ReceivePackHandler(root string) http.HandlerFunc {
 		rw.Header().Set("content-type", "application/x-git-receive-pack-result")
 
 		upr := packp.NewReferenceUpdateRequest()
+		upr.Capabilities.Add("side-band-64k")
 		err := upr.Decode(r.Body)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)
@@ -130,8 +135,18 @@ func ReceivePackHandler(root string) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
-
-		err = res.Encode(rw)
+		nm := sideband.NewMuxer(sideband.Sideband64k, rw)
+		for i := 20; i > 0; i-- {
+			nm.WriteChannel(sideband.ProgressMessage, []byte(fmt.Sprintf("Bonk %d\n", i)))
+			if fr, ok := rw.(*muxie.Writer).ResponseWriter.(http.Flusher); ok {
+				fr.Flush()
+			}
+			time.Sleep(1 * time.Second)
+		}
+		var g bytes.Buffer
+		res.Encode(&g)
+		nm.WriteChannel(sideband.PackData, g.Bytes())
+		rw.Write(pktline.FlushPkt)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)
 			log.Println(err)
@@ -177,14 +192,13 @@ func UploadPackHandler(root string) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
-		res, err := sess.UploadPack(r.Context(), upr)
+		_, err = sess.UploadPack(r.Context(), upr)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)
 			log.Println(err)
 			return
 		}
 
-		err = res.Encode(rw)
 		if err != nil {
 			http.Error(rw, err.Error(), 500)
 			log.Println(err)
